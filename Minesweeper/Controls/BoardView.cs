@@ -9,7 +9,7 @@ namespace Minesweeper.Controls
     public partial class BoardView : UserControl
     {
         #region Constants
-        public const int CellSize = 18;
+        public const int CellSize = 32;
         #endregion
 
         private Board board;
@@ -42,7 +42,7 @@ namespace Minesweeper.Controls
                         SizeMode = PictureBoxSizeMode.StretchImage,
                         Image = GetCellImage(board.Cells[row, col]),
                         BorderStyle = BorderStyle.FixedSingle,
-                        Tag = new Point(row, col) 
+                        Tag = new Point(row, col)
                     };
 
                     pictureBox.MouseClick += HandleMouseClick;
@@ -52,6 +52,7 @@ namespace Minesweeper.Controls
             }
 
             BoardResized?.Invoke(this, EventArgs.Empty);
+            board.CellChanged += Board_CellChanged;
         }
 
         private void HandleMouseClick(object sender, MouseEventArgs e)
@@ -68,7 +69,10 @@ namespace Minesweeper.Controls
 
         private void HandleLeftClick(object sender, MouseEventArgs e)
         {
-            MessageBox.Show("You clicked on the left button!");
+            if (sender is PictureBox pictureBox && pictureBox.Tag is Point point)
+            {
+                board.RevealCell(point.X, point.Y);
+            }
         }
 
         private void HandleRightClick(object sender, MouseEventArgs e)
@@ -95,8 +99,11 @@ namespace Minesweeper.Controls
             if (cell.HasFlag)
                 return ByteArrayToImage(Properties.Resources.drapeau);
 
-            if (cell.HasMine)
+            if (!cell.IsRevealed)
                 return ByteArrayToImage(Properties.Resources.standard);
+
+            if (cell.HasMine)
+                return ByteArrayToImage(Properties.Resources.mine);
 
             return cell.MinesAround switch
             {
@@ -111,6 +118,29 @@ namespace Minesweeper.Controls
                 8 => ByteArrayToImage(Properties.Resources.cell8),
                 _ => ByteArrayToImage(Properties.Resources.standard)
             };
+        }
+
+
+        private void Board_CellChanged(object? sender, CellChangedEventArgs e)
+        {
+            for (int i = 0; i < Controls.Count; i++)
+            {
+                if (Controls[i] is PictureBox pictureBox && pictureBox.Tag is Point point)
+                {
+                    var cell = board.Cells[point.X, point.Y];
+                    if (cell == e.Cell)
+                    {
+                        pictureBox.Image = GetCellImage(cell);
+                        break;
+                    }
+                }
+            }
+        }
+
+
+        private void BoardView_Load(object sender, EventArgs e)
+        {
+
         }
     }
 }

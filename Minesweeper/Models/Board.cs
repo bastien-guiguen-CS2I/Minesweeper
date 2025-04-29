@@ -1,4 +1,5 @@
-﻿using Minesweeper.Controls;
+﻿using Minesweeper;
+using Minesweeper.Controls;
 using Minesweeper.Enums;
 using Minesweeper.Models;
 using System.Diagnostics;
@@ -9,6 +10,8 @@ public class Board
     public int Columns { get; set; }
     public int Mines { get; set; }
     public BoardCell[,] Cells { get; set; }
+
+    public event EventHandler<CellChangedEventArgs> CellChanged;
 
     public Board(GameLevel gameLevel)
     {
@@ -39,6 +42,7 @@ public class Board
         Cells = new BoardCell[Rows, Columns];
         InitializeCells();
         SetMines();
+        CalculateMinesAround();
     }
 
     private void InitializeCells()
@@ -117,5 +121,73 @@ public class Board
         }
 
         cell.HasFlag = !cell.HasFlag;
+
+        if (CellChanged != null) 
+        {
+            CellChanged(this, new CellChangedEventArgs(cell));
+        }
     }
+
+    public void RevealCell(int row, int col)
+    {
+        var cell = Cells[row, col];
+
+        if (cell.IsRevealed || cell.HasFlag)
+            return;
+
+        cell.IsRevealed = true;
+
+        CellChanged?.Invoke(this, new CellChangedEventArgs(cell));
+
+        if (cell.MinesAround == 0 && !cell.HasMine)
+        {
+            for (int dr = -1; dr <= 1; dr++)
+            {
+                for (int dc = -1; dc <= 1; dc++)
+                {
+                    int newRow = row + dr;
+                    int newCol = col + dc;
+
+                    if (newRow >= 0 && newRow < Rows && newCol >= 0 && newCol < Columns)
+                    {
+                        RevealCell(newRow, newCol);
+                    }
+                }
+            }
+        }
+    }
+
+    private void CalculateMinesAround()
+    {
+        for (int row = 0; row < Rows; row++)
+        {
+            for (int col = 0; col < Columns; col++)
+            {
+                if (Cells[row, col].HasMine)
+                {
+                    Cells[row, col].MinesAround = -1;
+                    continue;
+                }
+
+                int minesAround = 0;
+                for (int dr = -1; dr <= 1; dr++)
+                {
+                    for (int dc = -1; dc <= 1; dc++)
+                    {
+                        int newRow = row + dr;
+                        int newCol = col + dc;
+
+                        if (newRow >= 0 && newRow < Rows && newCol >= 0 && newCol < Columns &&
+                            Cells[newRow, newCol].HasMine)
+                        {
+                            minesAround++;
+                        }
+                    }
+                }
+
+                Cells[row, col].MinesAround = minesAround;
+            }
+        }
+    }
+
 }

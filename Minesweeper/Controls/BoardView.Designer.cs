@@ -36,6 +36,7 @@
             AutoScaleMode = AutoScaleMode.Font;
             Name = "BoardView";
             Size = new Size(310, 294);
+            Load += BoardView_Load;
             ResumeLayout(false);
         }
 
