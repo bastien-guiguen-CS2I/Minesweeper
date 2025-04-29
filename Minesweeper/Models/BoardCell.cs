@@ -10,6 +10,8 @@ namespace Minesweeper.Models
     {
         public bool HasMine {  get; set; } = false;
         public bool HasFlag {  get; set; } = false;
-        public int MinesAround { get; set; } = -1; 
+        public int MinesAround { get; set; } = -1;
+        public bool IsRevealed { get; set; } = false;
+
     }
 }

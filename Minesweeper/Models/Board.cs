@@ -94,4 +94,28 @@ public class Board
             Debug.WriteLine(line);
         }
     }
+
+    public void SetFlag(int row, int col)
+    {
+        var cell = Cells[row, col];
+
+        if (cell.IsRevealed)
+        {
+            return;
+        }
+
+        int flagCount = 0;
+        foreach (var c in Cells)
+        {
+            if (c.HasFlag)
+                flagCount++;
+        }
+
+        if (!cell.HasFlag && flagCount >= Mines)
+        {
+            return;
+        }
+
+        cell.HasFlag = !cell.HasFlag;
+    }
 }

@@ -12,6 +12,8 @@ namespace Minesweeper.Controls
         public const int CellSize = 18;
         #endregion
 
+        private Board board;
+
         public BoardView()
         {
             InitializeComponent();
@@ -21,14 +23,15 @@ namespace Minesweeper.Controls
 
         public void InitializeBoardView(Board board)
         {
+            this.board = board;
             Controls.Clear();
 
             this.Width = board.Columns * CellSize;
             this.Height = board.Rows * CellSize;
 
-            for (var row = 0; row < board.Rows; row++)
+            for (int row = 0; row < board.Rows; row++)
             {
-                for (var col = 0; col < board.Columns; col++)
+                for (int col = 0; col < board.Columns; col++)
                 {
                     var pictureBox = new PictureBox
                     {
@@ -38,13 +41,11 @@ namespace Minesweeper.Controls
                         Top = row * CellSize,
                         SizeMode = PictureBoxSizeMode.StretchImage,
                         Image = GetCellImage(board.Cells[row, col]),
-                        BorderStyle = BorderStyle.FixedSingle
+                        BorderStyle = BorderStyle.FixedSingle,
+                        Tag = new Point(row, col) 
                     };
 
-                    pictureBox.Click += (sender, e) =>
-                    {
-                        
-                    };
+                    pictureBox.MouseClick += HandleMouseClick;
 
                     Controls.Add(pictureBox);
                 }
@@ -53,48 +54,63 @@ namespace Minesweeper.Controls
             BoardResized?.Invoke(this, EventArgs.Empty);
         }
 
+        private void HandleMouseClick(object sender, MouseEventArgs e)
+        {
+            if (e.Button == MouseButtons.Left)
+            {
+                HandleLeftClick(sender, e);
+            }
+            else if (e.Button == MouseButtons.Right)
+            {
+                HandleRightClick(sender, e);
+            }
+        }
 
+        private void HandleLeftClick(object sender, MouseEventArgs e)
+        {
+            MessageBox.Show("You clicked on the left button!");
+        }
+
+        private void HandleRightClick(object sender, MouseEventArgs e)
+        {
+            if (sender is PictureBox pictureBox && pictureBox.Tag is Point point)
+            {
+                board.SetFlag(point.X, point.Y);
+                var cell = board.Cells[point.X, point.Y];
+
+                pictureBox.Image = cell.HasFlag
+                    ? ByteArrayToImage(Properties.Resources.drapeau)
+                    : GetCellImage(cell);
+            }
+        }
 
         private Image ByteArrayToImage(byte[] bytes)
         {
-            using (var ms = new MemoryStream(bytes))
-            {
-                return Image.FromStream(ms);
-            }
+            using var ms = new MemoryStream(bytes);
+            return Image.FromStream(ms);
         }
 
         private Image GetCellImage(BoardCell cell)
         {
+            if (cell.HasFlag)
+                return ByteArrayToImage(Properties.Resources.drapeau);
+
             if (cell.HasMine)
+                return ByteArrayToImage(Properties.Resources.standard);
+
+            return cell.MinesAround switch
             {
-                return ByteArrayToImage(Properties.Resources.standard); 
-            }
-            else
-            {
-                switch (cell.MinesAround)
-                {
-                    case 0:
-                        return ByteArrayToImage(Properties.Resources.cell0);
-                    case 1:
-                        return ByteArrayToImage(Properties.Resources.cell1);
-                    case 2:
-                        return ByteArrayToImage(Properties.Resources.cell2);
-                    case 3:
-                        return ByteArrayToImage(Properties.Resources.cell3);
-                    case 4:
-                        return ByteArrayToImage(Properties.Resources.cell4);
-                    case 5:
-                        return ByteArrayToImage(Properties.Resources.cell5);
-                    case 6:
-                        return ByteArrayToImage(Properties.Resources.cell6);
-                    case 7:
-                        return ByteArrayToImage(Properties.Resources.cell7);
-                    case 8:
-                        return ByteArrayToImage(Properties.Resources.cell8);
-                    default:
-                        return ByteArrayToImage(Properties.Resources.standard);
-                }
-            }
+                0 => ByteArrayToImage(Properties.Resources.cell0),
+                1 => ByteArrayToImage(Properties.Resources.cell1),
+                2 => ByteArrayToImage(Properties.Resources.cell2),
+                3 => ByteArrayToImage(Properties.Resources.cell3),
+                4 => ByteArrayToImage(Properties.Resources.cell4),
+                5 => ByteArrayToImage(Properties.Resources.cell5),
+                6 => ByteArrayToImage(Properties.Resources.cell6),
+                7 => ByteArrayToImage(Properties.Resources.cell7),
+                8 => ByteArrayToImage(Properties.Resources.cell8),
+                _ => ByteArrayToImage(Properties.Resources.standard)
+            };
         }
     }
 }
