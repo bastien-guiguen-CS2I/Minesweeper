@@ -13,6 +13,8 @@ public class Board
 
     public event EventHandler<CellChangedEventArgs> CellChanged;
 
+    public bool IsGameOver { get; private set; } = false;
+
     public Board(GameLevel gameLevel)
     {
         switch (gameLevel)
@@ -132,14 +134,21 @@ public class Board
     {
         var cell = Cells[row, col];
 
-        if (cell.IsRevealed || cell.HasFlag)
+        if (cell.IsRevealed || cell.HasFlag || IsGameOver)
             return;
 
         cell.IsRevealed = true;
-
         CellChanged?.Invoke(this, new CellChangedEventArgs(cell));
 
-        if (cell.MinesAround == 0 && !cell.HasMine)
+        if (cell.HasMine)
+        {
+            IsGameOver = true;
+            RevealAllMines();
+            MessageBox.Show("💥 BOOM ! Vous avez perdu.", "Game Over", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
+            return;
+        }
+
+        if (cell.MinesAround == 0)
         {
             for (int dr = -1; dr <= 1; dr++)
             {
@@ -155,6 +164,8 @@ public class Board
                 }
             }
         }
+
+        CheckVictory(); 
     }
 
     private void CalculateMinesAround()
@@ -190,4 +201,37 @@ public class Board
         }
     }
 
+    private void RevealAllMines()
+    {
+        for (int row = 0; row < Rows; row++)
+        {
+            for (int col = 0; col < Columns; col++)
+            {
+                var cell = Cells[row, col];
+                if (cell.HasMine)
+                {
+                    cell.IsRevealed = true;
+                    CellChanged?.Invoke(this, new CellChangedEventArgs(cell));
+                }
+            }
+        }
+    }
+
+    private void CheckVictory()
+    {
+        for (int row = 0; row < Rows; row++)
+        {
+            for (int col = 0; col < Columns; col++)
+            {
+                var cell = Cells[row, col];
+
+                if (!cell.HasMine && !cell.IsRevealed)
+                    return;
+            }
+        }
+
+        IsGameOver = true;
+        RevealAllMines();
+        MessageBox.Show("🎉 Bravo, vous avez gagné !", "Victoire", MessageBoxButtons.OK, MessageBoxIcon.Information);
+    }
 }
